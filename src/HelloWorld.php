@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App;
+namespace IngeniozIt\Psr;
 
 final readonly class HelloWorld
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests;
+namespace IngeniozIt\Psr\Tests;
 
 use PHPUnit\Framework\TestCase;
-use App\HelloWorld;
+use IngeniozIt\Psr\HelloWorld;
 
 final class HelloWorldTest extends TestCase
 {
