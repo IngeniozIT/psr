@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IngeniozIt\Psr\Tests\Clock;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use PHPUnit\Framework\TestCase;
 use IngeniozIt\Psr\Clock\Clock;
 use Psr\Clock\ClockInterface;
@@ -36,6 +37,16 @@ class ClockTest extends TestCase
             $next,
             'Clock time must be between previous and next time'
         );
+    }
+
+    public function testCanUseASpecificTimeZone(): void
+    {
+        $timeZone = new DateTimeZone('Europe/Paris');
+        $clock = new Clock($timeZone);
+
+        $now = $clock->now();
+
+        self::assertEquals($timeZone, $now->getTimezone());
     }
 
     private static function assertBetween(
