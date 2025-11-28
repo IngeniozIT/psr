@@ -37,7 +37,7 @@ readonly class Message implements MessageInterface
     /** @var array<string, string> */
     private array $headersName;
 
-    public function __construct()
+    public function __construct(private StreamInterface $body)
     {
         $this->protocolVersion = '1.1';
         $this->headers = [];
@@ -185,12 +185,17 @@ readonly class Message implements MessageInterface
 
     public function getBody(): StreamInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        return $this->body;
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function withBody(StreamInterface $body): MessageInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        if ($body === $this->body) {
+            return $this;
+        }
+
+        return clone ($this, [
+            'body' => $body,
+        ]);
     }
 }

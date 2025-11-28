@@ -8,6 +8,7 @@ use IngeniozIt\Psr\Http\Message\Exception\InvalidHeaderName;
 use IngeniozIt\Psr\Http\Message\Exception\InvalidHeaderValue;
 use IngeniozIt\Psr\Http\Message\Exception\InvalidProtocolVersion;
 use IngeniozIt\Psr\Http\Message\Message;
+use IngeniozIt\Psr\Http\Message\Stream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\MessageInterface;
@@ -18,7 +19,9 @@ class MessageTest extends TestCase
 
     protected function message(): MessageInterface
     {
-        return new Message();
+        /** @var resource $resource */
+        $resource = fopen('php://temp', 'r+');
+        return new Message(new Stream($resource));
     }
 
     public function testIsAPsrMessage(): void
@@ -244,6 +247,30 @@ class MessageTest extends TestCase
         $message = $this->message();
 
         $message2 = $message->withoutHeader('Content-Type');
+
+        self::assertSame($message, $message2);
+    }
+
+    public function testUsesABody(): void
+    {
+        /** @var resource $resource */
+        $resource = fopen('php://temp', 'r+');
+        $body = new Stream($resource);
+        $message = $this->message()->withBody($body);
+
+        $body2 = $message->getBody();
+
+        self::assertSame($body, $body2);
+    }
+
+    public function testReturnsTheSameInstanceWhenBodyDoesNotChange(): void
+    {
+        /** @var resource $resource */
+        $resource = fopen('php://temp', 'r+');
+        $body = new Stream($resource);
+
+        $message = $this->message()->withBody($body);
+        $message2 = $message->withBody($body);
 
         self::assertSame($message, $message2);
     }
