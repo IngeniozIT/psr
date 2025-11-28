@@ -93,7 +93,10 @@ readonly class Message implements MessageInterface
     public function withHeader(string $name, mixed $value): MessageInterface
     {
         $this->assertHeaderNameIsValid($name);
-        $headerValue = $this->sanitizeHeaderValue($value);
+        $headerValue = array_map(
+            $this->sanitizeHeaderValue(...),
+            is_array($value) ? $value : [$value],
+        );
 
         if (
             array_key_exists($name, $this->headers) &&
@@ -113,33 +116,21 @@ readonly class Message implements MessageInterface
         ]);
     }
 
-    /**
-     * @param string|string[] $value
-     * @return string[]
-     */
-    private function sanitizeHeaderValue(mixed $value): array
+    private function sanitizeHeaderValue(mixed $value): string
     {
-        $sanitizedValue = [];
-
-        $cleanValue = !is_array($value) ? [$value] : $value;
-        foreach ($cleanValue as $valueItem) {
-            /** @phpstan-ignore function.alreadyNarrowedType */
-            if (!is_string($valueItem)) {
-                throw new InvalidHeaderValue($value);
-            }
-
-            $valueItem = str_replace(
-                self::COMPATIBILITY_SEQUENCES,
-                ' ',
-                $valueItem,
-            );
-
-            $this->assertHeaderValueIsValid($valueItem);
-
-            $sanitizedValue[] = trim($valueItem);
+        if (!is_string($value)) {
+            throw new InvalidHeaderValue($value);
         }
 
-        return $sanitizedValue;
+        $value = str_replace(
+            self::COMPATIBILITY_SEQUENCES,
+            ' ',
+            $value,
+        );
+
+        $this->assertHeaderValueIsValid($value);
+
+        return trim($value);
     }
 
     private function assertHeaderNameIsValid(string $name): void
@@ -161,16 +152,35 @@ readonly class Message implements MessageInterface
         }
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
-    public function withAddedHeader(string $name, $value): MessageInterface
+    /** @param string|string[] $value */
+    public function withAddedHeader(string $name, mixed $value): MessageInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        $newValue = array_merge(
+            $this->getHeader($name),
+            is_array($value) ? $value : [$value],
+        );
+        return $this->withHeader($name, $newValue);
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function withoutHeader(string $name): MessageInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        if (!$this->hasHeader($name)) {
+            return $this;
+        }
+
+        $headers = $this->headers;
+        $headersName = $this->headersName;
+
+        $headerName = strtolower($name);
+        /** @phpstan-ignore unset.offset, offsetAccess.notFound, offsetAccess.invalidOffset */
+        unset($headers[$headersName[$headerName]]);
+        /** @phpstan-ignore unset.offset */
+        unset($headersName[$headerName]);
+
+        return clone($this, [
+            'headers' => $headers,
+            'headersName' => $headersName,
+        ]);
     }
 
     public function getBody(): StreamInterface

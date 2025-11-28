@@ -167,12 +167,12 @@ class MessageTest extends TestCase
     }
 
     #[DataProvider('provideInvalidHeaderValues')]
-    public function testHeaderValueCannotBeInvalid(mixed $value): void
+    public function testHeaderValueCannotBeInvalid(mixed $value, mixed $errorValue): void
     {
         $message = $this->message();
 
         self::expectException(InvalidHeaderValue::class);
-        self::expectExceptionMessage("Invalid header value: " . serialize($value));
+        self::expectExceptionMessage("Invalid header value: " . serialize($errorValue));
         /** @phpstan-ignore argument.type */
         $message->withHeader('Content-Type', $value);
     }
@@ -181,11 +181,11 @@ class MessageTest extends TestCase
     public static function provideInvalidHeaderValues(): array
     {
         return [
-            'not a string nor an array' => [42],
-            'array that does not contain a string' => [[42]],
-            'value that contains a NUL' => ["test\x00carriage"],
-            'value that contains a carriage return' => ["test\rcarriage"],
-            'value that contains a line feed' => ["test\ncarriage"],
+            'not a string nor an array' => [42, 42],
+            'array that does not contain a string' => [[42], 42],
+            'value that contains a NUL' => ["test\x00carriage", "test\x00carriage"],
+            'value that contains a carriage return' => ["test\rcarriage", "test\rcarriage"],
+            'value that contains a line feed' => ["test\ncarriage", "test\ncarriage"],
         ];
     }
 
@@ -213,6 +213,37 @@ class MessageTest extends TestCase
         $message = $this->message()->withHeader('Content-Type', 'text/html');
 
         $message2 = $message->withHeader('Content-Type', 'text/html');
+
+        self::assertSame($message, $message2);
+    }
+
+    public function testCanAppendAValueToAHeader(): void
+    {
+        $message = $this->message()
+            ->withHeader('Content-Type', 'text/html')
+            ->withAddedHeader('Content-Type', 'text/json');
+
+        $header = $message->getHeader('Content-Type');
+
+        self::assertEquals(['text/html', 'text/json'], $header);
+    }
+
+    public function testCanRemoveAHeader(): void
+    {
+        $message = $this->message()
+            ->withHeader('Content-Type', 'text/html')
+            ->withoutHeader('Content-Type');
+
+        $headers = $message->getHeaders();
+
+        self::assertEquals([], $headers);
+    }
+
+    public function testReturnsTheSameInstanceWhenHeaderDoesNotExist(): void
+    {
+        $message = $this->message();
+
+        $message2 = $message->withoutHeader('Content-Type');
 
         self::assertSame($message, $message2);
     }
