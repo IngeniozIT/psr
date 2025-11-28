@@ -1,0 +1,111 @@
+<?php
+
+declare(strict_types=1);
+
+namespace IngeniozIt\Psr\Http\Message;
+
+use BadMethodCallException;
+use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
+use Psr\Http\Message\StreamInterface;
+
+class Stream implements StreamInterface
+{
+    /** @param ?resource $resource */
+    public function __construct(private mixed $resource)
+    {
+        if (!is_resource($this->resource)) {
+            throw new InvalidResource();
+        }
+    }
+
+    public function __toString(): string
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    public function close(): void
+    {
+        if (is_resource($this->resource)) {
+            fclose($this->resource);
+        }
+    }
+
+    public function detach()
+    {
+        $resource = $this->resource;
+        $this->resource = null;
+
+        return $resource;
+    }
+
+    public function getSize(): ?int
+    {
+        if (is_resource($this->resource)) {
+            $stats = fstat($this->resource);
+            return is_array($stats) ?
+                $stats['size'] :
+                null;
+        }
+
+        return null;
+    }
+
+    public function tell(): int
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    public function eof(): bool
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    public function isSeekable(): bool
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
+    public function seek(int $offset, int $whence = SEEK_SET): void
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    public function rewind(): void
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    public function isWritable(): bool
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
+    public function write(string $string): int
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    public function isReadable(): bool
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
+    public function read(int $length): string
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    public function getContents(): string
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+
+    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
+    public function getMetadata(?string $key = null)
+    {
+        throw new BadMethodCallException('Not implemented');
+    }
+}
