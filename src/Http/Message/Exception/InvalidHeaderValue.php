@@ -10,6 +10,8 @@ class InvalidHeaderValue extends InvalidArgumentException
 {
     public function __construct(mixed $headerValue)
     {
-        parent::__construct("Invalid header value: " . serialize($headerValue));
+        parent::__construct(
+            "Invalid header value: " . serialize($headerValue),
+        );
     }
 }

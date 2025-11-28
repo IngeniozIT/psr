@@ -14,7 +14,7 @@ use Psr\Http\Message\MessageInterface;
 
 class MessageTest extends TestCase
 {
-    protected const DEFAULT_HTTP_PROTOCOL = '1.1';
+    protected const string DEFAULT_HTTP_PROTOCOL = '1.1';
 
     protected function message(): MessageInterface
     {
@@ -132,6 +132,23 @@ class MessageTest extends TestCase
         self::assertEquals([], $headers);
     }
 
+    public function testHeadersCanBeReplaced(): void
+    {
+        $message = $this->message()
+            ->withHeader('Content-Type', 'text/html')
+            ->withHeader('Content-Type', 'text/json');
+
+        $hasHeader = $message->hasHeader('Content-Type');
+        $header = $message->getHeader('Content-Type');
+        $headerLine = $message->getHeaderLine('Content-Type');
+        $headers = $message->getHeaders();
+
+        self::assertTrue($hasHeader);
+        self::assertEquals(['text/json'], $header);
+        self::assertEquals('text/json', $headerLine);
+        self::assertEquals(['Content-Type' => ['text/json']], $headers);
+    }
+
     #[DataProvider('provideInvalidHeaderNames')]
     public function testHeaderNameCannotBeInvalid(string $headerName): void
     {
@@ -186,8 +203,17 @@ class MessageTest extends TestCase
     public static function provideNormalizableHeaderValues(): array
     {
         return [
-            'compatibility sequence' => ["test\r\n content\r\n\ttype", 'test content type'],
-            'untrimmed value' => ['   value   ', 'value'],
+            'compatibility sequences are replaced by a space' => ["test\r\n content\r\n\ttype", 'test content type'],
+            'values are trimmed' => ['   value   ', 'value'],
         ];
+    }
+
+    public function testReturnsTheSameInstanceWhenHeaderDoesNotChange(): void
+    {
+        $message = $this->message()->withHeader('Content-Type', 'text/html');
+
+        $message2 = $message->withHeader('Content-Type', 'text/html');
+
+        self::assertSame($message, $message2);
     }
 }

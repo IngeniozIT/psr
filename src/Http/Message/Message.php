@@ -15,6 +15,7 @@ use function array_key_exists;
 use function floatval;
 use function implode;
 use function is_array;
+use function is_string;
 use function str_replace;
 use function strpbrk;
 use function strtolower;
@@ -22,7 +23,9 @@ use function trim;
 
 readonly class Message implements MessageInterface
 {
-    private const string INVALID_HEADER_NAME_CHARS = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20";
+    private const string INVALID_HEADER_NAME_CHARS = "\x00\x01\x02\x03\x04" .
+        "\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14" .
+        "\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20";
     private const string INVALID_HEADER_VALUE_CHARS = "\x00\r\n";
     private const array COMPATIBILITY_SEQUENCES = ["\r\n ", "\r\n\t"];
 
@@ -89,9 +92,18 @@ readonly class Message implements MessageInterface
     /** @param string|string[] $value */
     public function withHeader(string $name, mixed $value): MessageInterface
     {
-        $this->assertNameIsValid($name);
+        $this->assertHeaderNameIsValid($name);
+        $headerValue = $this->sanitizeHeaderValue($value);
+
+        if (
+            array_key_exists($name, $this->headers) &&
+            $headerValue == $this->headers[$name]
+        ) {
+            return $this;
+        }
+
         $headers = $this->headers;
-        $headers[$name] = $this->sanitizeHeaderValue($value);
+        $headers[$name] = $headerValue;
         $headersName = $this->headersName;
         $headersName[strtolower($name)] = $name;
 
@@ -99,13 +111,6 @@ readonly class Message implements MessageInterface
             'headers' => $headers,
             'headersName' => $headersName,
         ]);
-    }
-
-    private function assertNameIsValid(string $name): void
-    {
-        if ($name === '' || strpbrk($name, self::INVALID_HEADER_NAME_CHARS) !== false) {
-            throw new InvalidHeaderName($name);
-        }
     }
 
     /**
@@ -119,20 +124,41 @@ readonly class Message implements MessageInterface
         $cleanValue = !is_array($value) ? [$value] : $value;
         foreach ($cleanValue as $valueItem) {
             /** @phpstan-ignore function.alreadyNarrowedType */
-            if (!\is_string($valueItem)) {
+            if (!is_string($valueItem)) {
                 throw new InvalidHeaderValue($value);
             }
 
-            $valueItem = str_replace(self::COMPATIBILITY_SEQUENCES, ' ', $valueItem);
+            $valueItem = str_replace(
+                self::COMPATIBILITY_SEQUENCES,
+                ' ',
+                $valueItem,
+            );
 
-            if (strpbrk($valueItem, self::INVALID_HEADER_VALUE_CHARS) !== false) {
-                throw new InvalidHeaderValue($valueItem);
-            }
+            $this->assertHeaderValueIsValid($valueItem);
 
             $sanitizedValue[] = trim($valueItem);
         }
 
         return $sanitizedValue;
+    }
+
+    private function assertHeaderNameIsValid(string $name): void
+    {
+        if (
+            $name === '' ||
+            strpbrk($name, self::INVALID_HEADER_NAME_CHARS) !== false
+        ) {
+            throw new InvalidHeaderName($name);
+        }
+    }
+
+    private function assertHeaderValueIsValid(string $value): void
+    {
+        if (
+            strpbrk($value, self::INVALID_HEADER_VALUE_CHARS) !== false
+        ) {
+            throw new InvalidHeaderValue($value);
+        }
     }
 
     /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
