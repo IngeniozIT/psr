@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IngeniozIt\Psr\Tests\Http\Message;
 
 use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
+use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
@@ -85,5 +86,54 @@ class StreamTest extends TestCase
             'empty resource' => [$emptyResource, 0],
             'non-empty resource' => [$nonEmptyResource, 3],
         ];
+    }
+
+    /** @param resource $resource */
+    #[DataProvider('provideResourcesWithStreamPosition')]
+    public function testCanTellStreamPosition($resource, int $expectedPosition): void
+    {
+        $position = $this->getStream($resource)->tell();
+
+        self::assertEquals($expectedPosition, $position);
+    }
+
+    /** @return array<string, array{resource, int}> */
+    public static function provideResourcesWithStreamPosition(): array
+    {
+        /** @var resource $startPosition */
+        $startPosition = fopen('php://temp', 'r+');
+
+        /** @var resource $endPosition */
+        $endPosition = fopen('php://temp', 'r+');
+        fwrite($endPosition, 'foo');
+        fseek($endPosition, 3);
+
+        return [
+            'start position' => [$startPosition, 0],
+            'end position' => [$endPosition, 3],
+        ];
+    }
+
+    public function testThrowsExceptionWhenTellFails(): void
+    {
+        /** @var resource $resource */
+        $resource = fopen('php://stdin', 'r');
+        $stream = $this->getStream($resource);
+
+        self::expectException(CannotTellStream::class);
+        self::expectExceptionMessage("Could not tell stream");
+        $stream->tell();
+    }
+
+    public function testThrowsExceptionWhenTellingDetachedStream(): void
+    {
+        /** @var resource $resource */
+        $resource = fopen('php://temp', 'r+');
+        $stream = $this->getStream($resource);
+        $stream->detach();
+
+        self::expectException(CannotTellStream::class);
+        self::expectExceptionMessage("Could not tell stream");
+        $stream->tell();
     }
 }
