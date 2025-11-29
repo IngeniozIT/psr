@@ -9,6 +9,7 @@ use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
 use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
 use Psr\Http\Message\StreamInterface;
 
+use function feof;
 use function fclose;
 use function fstat;
 use function ftell;
@@ -74,7 +75,11 @@ class Stream implements StreamInterface
 
     public function eof(): bool
     {
-        throw new BadMethodCallException('Not implemented');
+        if (!is_resource($this->resource)) {
+            return true;
+        }
+
+        return feof($this->resource);
     }
 
     public function isSeekable(): bool

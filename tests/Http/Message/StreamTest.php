@@ -47,6 +47,7 @@ class StreamTest extends TestCase
         self::assertSame($resource, $detachedResource);
         self::assertNull($stream->detach());
         self::assertNull($stream->getSize());
+        self::assertTrue($stream->eof());
         $stream->close();
     }
 
@@ -135,5 +136,31 @@ class StreamTest extends TestCase
         self::expectException(CannotTellStream::class);
         self::expectExceptionMessage("Could not tell stream");
         $stream->tell();
+    }
+
+    /** @param resource $resource */
+    #[DataProvider('provideResourcesWithEndOfFile')]
+    public function testCanTellIfStreamIsAtTheEnd($resource, bool $expectedEndOfFile): void
+    {
+        $endOfFile = $this->getStream($resource)->eof();
+
+        self::assertEquals($expectedEndOfFile, $endOfFile);
+    }
+
+    /** @return array<string, array{resource, bool}> */
+    public static function provideResourcesWithEndOfFile(): array
+    {
+        /** @var resource $startPosition */
+        $startPosition = fopen('php://temp', 'r+');
+
+        /** @var resource $endPosition */
+        $endPosition = fopen('php://temp', 'r+');
+        fwrite($endPosition, 'foo');
+        fread($endPosition, 3);
+
+        return [
+            'start position' => [$startPosition, false],
+            'end position' => [$endPosition, true],
+        ];
     }
 }
