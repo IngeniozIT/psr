@@ -259,4 +259,61 @@ class StreamTest extends TestCase
             'detached stream' => [$detachedStream],
         ];
     }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideRewindOperations')]
+    public function testCanRewindStream(StreamInterface $stream, int $initialPosition): void
+    {
+        $stream->rewind();
+        $position = $stream->tell();
+
+        self::assertEquals(0, $position);
+    }
+
+    /** @return array<string, array{StreamInterface, int}> */
+    public static function provideRewindOperations(): array
+    {
+        /** @var resource $resource1 */
+        $resource1 = fopen('php://temp', 'r+');
+        fwrite($resource1, 'foobar');
+        $stream1 = new Stream($resource1);
+
+        /** @var resource $resource2 */
+        $resource2 = fopen('php://temp', 'r+');
+        fwrite($resource2, 'foobar');
+        fseek($resource2, 3);
+        $stream2 = new Stream($resource2);
+
+        return [
+            'from start position' => [$stream1, 0],
+            'from middle position' => [$stream2, 3],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideRewindExceptionCases')]
+    public function testThrowsExceptionWhenRewinding(StreamInterface $stream): void
+    {
+        self::expectException(CannotSeekStream::class);
+        self::expectExceptionMessage("Could not seek stream");
+        $stream->rewind();
+    }
+
+    /** @return array<string, array{StreamInterface}> */
+    public static function provideRewindExceptionCases(): array
+    {
+        /** @var resource $nonRewindableResource */
+        $nonRewindableResource = fopen('php://stdin', 'r');
+        $nonRewindableStream = new Stream($nonRewindableResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'non-rewindable stream' => [$nonRewindableStream],
+            'detached stream' => [$detachedStream],
+        ];
+    }
 }

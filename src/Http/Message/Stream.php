@@ -107,7 +107,7 @@ class Stream implements StreamInterface
 
     public function rewind(): void
     {
-        throw new BadMethodCallException('Not implemented');
+        $this->seek(0);
     }
 
     public function isWritable(): bool
