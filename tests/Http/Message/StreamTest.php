@@ -7,6 +7,7 @@ namespace IngeniozIt\Psr\Tests\Http\Message;
 use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
 use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotSeekStream;
+use IngeniozIt\Psr\Http\Message\Exception\CannotWriteToStream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
@@ -346,6 +347,74 @@ class StreamTest extends TestCase
             'writable resource' => [$writableStream, true],
             'non-writable resource' => [$nonWritableStream, false],
             'detached stream' => [$detachedStream, false],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideWriteOperations')]
+    public function testCanWrite(StreamInterface $stream, string $stringToWrite, int $expectedBytesWritten, string $expectedContent): void
+    {
+        $bytesWritten = $stream->write($stringToWrite);
+
+        self::assertEquals($expectedBytesWritten, $bytesWritten);
+        $resource = $stream->detach();
+        self::assertNotNull($resource);
+        /** @var resource $resource */
+        rewind($resource);
+        $content = stream_get_contents($resource);
+        self::assertEquals($expectedContent, $content);
+        fclose($resource);
+    }
+
+    /** @return array<string, array{StreamInterface, string, int, string}> */
+    public static function provideWriteOperations(): array
+    {
+        /** @var resource $emptyResource */
+        $emptyResource = fopen('php://temp', 'r+');
+        $emptyStream = new Stream($emptyResource);
+
+        /** @var resource $existingContentResource */
+        $existingContentResource = fopen('php://temp', 'r+');
+        fwrite($existingContentResource, 'foo');
+        $existingContentStream = new Stream($existingContentResource);
+
+        /** @var resource $middlePositionResource */
+        $middlePositionResource = fopen('php://temp', 'r+');
+        fwrite($middlePositionResource, 'foobar');
+        fseek($middlePositionResource, 3);
+        $middlePositionStream = new Stream($middlePositionResource);
+
+        return [
+            'write to empty stream' => [$emptyStream, 'hello', 5, 'hello'],
+            'write to stream with existing content' => [$existingContentStream, 'bar', 3, 'foobar'],
+            'write at middle position' => [$middlePositionStream, 'xyz', 3, 'fooxyz'],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideWriteExceptionCases')]
+    public function testThrowsExceptionWhenWriting(StreamInterface $stream): void
+    {
+        self::expectException(CannotWriteToStream::class);
+        self::expectExceptionMessage("Could not write stream");
+        $stream->write('test');
+    }
+
+    /** @return array<string, array{StreamInterface}> */
+    public static function provideWriteExceptionCases(): array
+    {
+        /** @var resource $nonWritableResource */
+        $nonWritableResource = fopen('php://stdin', 'r');
+        $nonWritableStream = new Stream($nonWritableResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'non-writable stream' => [$nonWritableStream],
+            'detached stream' => [$detachedStream],
         ];
     }
 }

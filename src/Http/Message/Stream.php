@@ -7,6 +7,7 @@ namespace IngeniozIt\Psr\Http\Message;
 use BadMethodCallException;
 use IngeniozIt\Psr\Http\Message\Exception\CannotSeekStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
+use IngeniozIt\Psr\Http\Message\Exception\CannotWriteToStream;
 use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
 use Psr\Http\Message\StreamInterface;
 
@@ -15,6 +16,7 @@ use function fclose;
 use function fseek;
 use function fstat;
 use function ftell;
+use function fwrite;
 use function is_array;
 use function is_resource;
 use function stream_get_meta_data;
@@ -124,10 +126,14 @@ class Stream implements StreamInterface
         return $mode === 'r+' || in_array($mode[0] ?? '', self::WRITABLE_MODES);
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function write(string $string): int
     {
-        throw new BadMethodCallException('Not implemented');
+        if (!$this->isWritable()) {
+            throw new CannotWriteToStream();
+        }
+
+        /** @phpstan-ignore argument.type, return.type */
+        return fwrite($this->resource, $string);
     }
 
     public function isReadable(): bool
