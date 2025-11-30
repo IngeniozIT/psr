@@ -316,4 +316,36 @@ class StreamTest extends TestCase
             'detached stream' => [$detachedStream],
         ];
     }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideResourcesWithWritable')]
+    public function testCanTellIfStreamIsWritable(StreamInterface $stream, bool $expectedWritable): void
+    {
+        $writable = $stream->isWritable();
+
+        self::assertEquals($expectedWritable, $writable);
+    }
+
+    /** @return array<string, array{StreamInterface, bool}> */
+    public static function provideResourcesWithWritable(): array
+    {
+        /** @var resource $writableResource */
+        $writableResource = fopen('php://temp', 'r+');
+        $writableStream = new Stream($writableResource);
+
+        /** @var resource $nonWritableResource */
+        $nonWritableResource = fopen('php://stdin', 'r');
+        $nonWritableStream = new Stream($nonWritableResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'writable resource' => [$writableStream, true],
+            'non-writable resource' => [$nonWritableStream, false],
+            'detached stream' => [$detachedStream, false],
+        ];
+    }
 }

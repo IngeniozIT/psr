@@ -21,6 +21,8 @@ use function stream_get_meta_data;
 
 class Stream implements StreamInterface
 {
+    private const array WRITABLE_MODES = ['w', 'a', 'x', 'c'];
+
     /** @param ?resource $resource */
     public function __construct(private mixed $resource)
     {
@@ -112,7 +114,14 @@ class Stream implements StreamInterface
 
     public function isWritable(): bool
     {
-        throw new BadMethodCallException('Not implemented');
+        if (!is_resource($this->resource)) {
+            return false;
+        }
+
+        $metadata = stream_get_meta_data($this->resource);
+        $mode = $metadata['mode'];
+
+        return $mode === 'r+' || in_array($mode[0] ?? '', self::WRITABLE_MODES);
     }
 
     /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
