@@ -20,6 +20,7 @@ use function fwrite;
 use function is_array;
 use function is_resource;
 use function stream_get_meta_data;
+use function str_contains;
 
 class Stream implements StreamInterface
 {
@@ -128,7 +129,13 @@ class Stream implements StreamInterface
 
     public function isReadable(): bool
     {
-        throw new BadMethodCallException('Not implemented');
+        $mode = $this->getMetadata('mode');
+
+        if (!is_string($mode)) {
+            return false;
+        }
+
+        return ($mode[0] ?? '') === 'r' || str_contains($mode, '+');
     }
 
     /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */

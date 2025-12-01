@@ -351,6 +351,39 @@ class StreamTest extends TestCase
     }
 
     /** @param StreamInterface $stream */
+    #[DataProvider('provideResourcesWithReadable')]
+    public function testCanTellIfStreamIsReadable(StreamInterface $stream, bool $expectedReadable): void
+    {
+        $readable = $stream->isReadable();
+
+        self::assertEquals($expectedReadable, $readable);
+    }
+
+    /** @return array<string, array{StreamInterface, bool}> */
+    public static function provideResourcesWithReadable(): array
+    {
+        /** @var resource $readableResource */
+        $readableResource = fopen('php://stdin', 'r');
+        $readableStream = new Stream($readableResource);
+
+        $nonReadableFile = tempnam(sys_get_temp_dir(), 'test');
+        /** @var resource $nonReadableResource */
+        $nonReadableResource = fopen($nonReadableFile, 'w');
+        $nonReadableStream = new Stream($nonReadableResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'readable resource' => [$readableStream, true],
+            'non-readable resource' => [$nonReadableStream, false],
+            'detached stream' => [$detachedStream, false],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
     #[DataProvider('provideWriteOperations')]
     public function testCanWrite(StreamInterface $stream, string $stringToWrite, int $expectedBytesWritten, string $expectedContent): void
     {
