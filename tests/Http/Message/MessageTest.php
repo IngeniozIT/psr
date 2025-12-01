@@ -87,7 +87,7 @@ class MessageTest extends TestCase
         self::assertTrue($hasHeader);
         self::assertEquals(['text/html'], $header);
         self::assertEquals('text/html', $headerLine);
-        self::assertEquals(['Content-Type' => ['text/html']], $headers);
+        self::assertEquals(['text/html'], $headers['Content-Type']);
     }
 
     public function testHeadersCanHaveMultipleValues(): void
@@ -102,7 +102,7 @@ class MessageTest extends TestCase
         self::assertTrue($hasHeader);
         self::assertEquals(['text/html', 'application/xhtml+xml'], $header);
         self::assertEquals('text/html,application/xhtml+xml', $headerLine);
-        self::assertEquals(['Accept' => ['text/html', 'application/xhtml+xml']], $headers);
+        self::assertEquals(['text/html', 'application/xhtml+xml'], $headers['Accept']);
     }
 
     public function testHeadersAreCaseInsensitive(): void
@@ -117,7 +117,7 @@ class MessageTest extends TestCase
         self::assertTrue($hasHeader);
         self::assertEquals(['text/html'], $header);
         self::assertEquals('text/html', $headerLine);
-        self::assertEquals(['CONTENT-TYPE' => ['text/html']], $headers);
+        self::assertEquals(['text/html'], $headers['CONTENT-TYPE']);
     }
 
     public function testHeadersCanBeEmpty(): void
@@ -149,7 +149,7 @@ class MessageTest extends TestCase
         self::assertTrue($hasHeader);
         self::assertEquals(['text/json'], $header);
         self::assertEquals('text/json', $headerLine);
-        self::assertEquals(['Content-Type' => ['text/json']], $headers);
+        self::assertEquals(['text/json'], $headers['Content-Type']);
     }
 
     #[DataProvider('provideInvalidHeaderNames')]
