@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IngeniozIt\Psr\Http\Message;
 
 use BadMethodCallException;
+use IngeniozIt\Psr\Http\Message\Exception\CannotReadStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotSeekStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotWriteToStream;
@@ -13,6 +14,7 @@ use Psr\Http\Message\StreamInterface;
 
 use function feof;
 use function fclose;
+use function fread;
 use function fseek;
 use function fstat;
 use function ftell;
@@ -138,10 +140,18 @@ class Stream implements StreamInterface
         return ($mode[0] ?? '') === 'r' || str_contains($mode, '+');
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function read(int $length): string
     {
-        throw new BadMethodCallException('Not implemented');
+        if (!$this->isReadable()) {
+            throw new CannotReadStream();
+        }
+
+        if ($length < 1) {
+            return '';
+        }
+
+        /** @phpstan-ignore argument.type, return.type */
+        return fread($this->resource, $length);
     }
 
     public function getContents(): string

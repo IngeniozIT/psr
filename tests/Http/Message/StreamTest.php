@@ -7,6 +7,7 @@ namespace IngeniozIt\Psr\Tests\Http\Message;
 use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
 use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotSeekStream;
+use IngeniozIt\Psr\Http\Message\Exception\CannotReadStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotWriteToStream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -447,6 +448,92 @@ class StreamTest extends TestCase
 
         return [
             'non-writable stream' => [$nonWritableStream],
+            'detached stream' => [$detachedStream],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideReadOperations')]
+    public function testCanRead(StreamInterface $stream, int $length, string $expectedContent, int $expectedPosition): void
+    {
+        $content = $stream->read($length);
+        $position = $stream->tell();
+
+        self::assertEquals($expectedContent, $content);
+        self::assertEquals($expectedPosition, $position);
+    }
+
+    /** @return array<string, array{StreamInterface, int, string, int}> */
+    public static function provideReadOperations(): array
+    {
+        /** @var resource $emptyResource */
+        $emptyResource = fopen('php://temp', 'r+');
+        $emptyStream = new Stream($emptyResource);
+
+        /** @var resource $fullContentResource */
+        $fullContentResource = fopen('php://temp', 'r+');
+        fwrite($fullContentResource, 'foobar');
+        rewind($fullContentResource);
+        $fullContentStream = new Stream($fullContentResource);
+
+        /** @var resource $noContentResource */
+        $noContentResource = fopen('php://temp', 'r+');
+        fwrite($noContentResource, 'foobar');
+        rewind($noContentResource);
+        $noContentStream = new Stream($noContentResource);
+
+        /** @var resource $partialReadResource */
+        $partialReadResource = fopen('php://temp', 'r+');
+        fwrite($partialReadResource, 'foobar');
+        rewind($partialReadResource);
+        $partialReadStream = new Stream($partialReadResource);
+
+        /** @var resource $readMoreThanAvailableResource */
+        $readMoreThanAvailableResource = fopen('php://temp', 'r+');
+        fwrite($readMoreThanAvailableResource, 'foo');
+        rewind($readMoreThanAvailableResource);
+        $readMoreThanAvailableStream = new Stream($readMoreThanAvailableResource);
+
+        /** @var resource $readFromMiddlePositionResource */
+        $readFromMiddlePositionResource = fopen('php://temp', 'r+');
+        fwrite($readFromMiddlePositionResource, 'foobar');
+        fseek($readFromMiddlePositionResource, 3);
+        $readFromMiddlePositionStream = new Stream($readFromMiddlePositionResource);
+
+        return [
+            'read from empty stream' => [$emptyStream, 5, '', 0],
+            'read full content' => [$fullContentStream, 6, 'foobar', 6],
+            'read no content' => [$noContentStream, 0, '', 0],
+            'read partial content' => [$partialReadStream, 1, 'f', 1],
+            'read more than available' => [$readMoreThanAvailableStream, 10, 'foo', 3],
+            'read from middle position' => [$readFromMiddlePositionStream, 3, 'bar', 6],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideReadExceptionCases')]
+    public function testThrowsExceptionWhenReading(StreamInterface $stream): void
+    {
+        self::expectException(CannotReadStream::class);
+        self::expectExceptionMessage("Could not read stream");
+        $stream->read(5);
+    }
+
+    /** @return array<string, array{StreamInterface}> */
+    public static function provideReadExceptionCases(): array
+    {
+        $nonReadableFile = tempnam(sys_get_temp_dir(), 'test');
+        /** @var resource $nonReadableResource */
+        $nonReadableResource = fopen($nonReadableFile, 'w');
+        $nonReadableStream = new Stream($nonReadableResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'non-readable stream' => [$nonReadableStream],
             'detached stream' => [$detachedStream],
         ];
     }
