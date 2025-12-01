@@ -539,6 +539,79 @@ class StreamTest extends TestCase
     }
 
     /** @param StreamInterface $stream */
+    #[DataProvider('provideGetContentsOperations')]
+    public function testCanGetContents(StreamInterface $stream, string $expectedContent, int $expectedPosition): void
+    {
+        $content = $stream->getContents();
+        $position = $stream->tell();
+
+        self::assertEquals($expectedContent, $content);
+        self::assertEquals($expectedPosition, $position);
+    }
+
+    /** @return array<string, array{StreamInterface, string, int}> */
+    public static function provideGetContentsOperations(): array
+    {
+        /** @var resource $emptyResource */
+        $emptyResource = fopen('php://temp', 'r+');
+        $emptyStream = new Stream($emptyResource);
+
+        /** @var resource $fullContentResource */
+        $fullContentResource = fopen('php://temp', 'r+');
+        fwrite($fullContentResource, 'foobar');
+        rewind($fullContentResource);
+        $fullContentStream = new Stream($fullContentResource);
+
+        /** @var resource $fromMiddlePositionResource */
+        $fromMiddlePositionResource = fopen('php://temp', 'r+');
+        fwrite($fromMiddlePositionResource, 'foobar');
+        fseek($fromMiddlePositionResource, 3);
+        $fromMiddlePositionStream = new Stream($fromMiddlePositionResource);
+
+        /** @var resource $afterPartialReadResource */
+        $afterPartialReadResource = fopen('php://temp', 'r+');
+        fwrite($afterPartialReadResource, 'foobar');
+        rewind($afterPartialReadResource);
+        fread($afterPartialReadResource, 2);
+        $afterPartialReadStream = new Stream($afterPartialReadResource);
+
+        return [
+            'empty stream' => [$emptyStream, '', 0],
+            'full content from start' => [$fullContentStream, 'foobar', 6],
+            'content from middle position' => [$fromMiddlePositionStream, 'bar', 6],
+            'content after partial read' => [$afterPartialReadStream, 'obar', 6],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideGetContentsExceptionCases')]
+    public function testThrowsExceptionWhenGettingContents(StreamInterface $stream): void
+    {
+        self::expectException(CannotReadStream::class);
+        self::expectExceptionMessage("Could not read stream");
+        $stream->getContents();
+    }
+
+    /** @return array<string, array{StreamInterface}> */
+    public static function provideGetContentsExceptionCases(): array
+    {
+        $nonReadableFile = tempnam(sys_get_temp_dir(), 'test');
+        /** @var resource $nonReadableResource */
+        $nonReadableResource = fopen($nonReadableFile, 'w');
+        $nonReadableStream = new Stream($nonReadableResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'non-readable stream' => [$nonReadableStream],
+            'detached stream' => [$detachedStream],
+        ];
+    }
+
+    /** @param StreamInterface $stream */
     #[DataProvider('provideMetadataCases')]
     public function testCanGetMetadata(StreamInterface $stream, ?string $key, mixed $expectedValue): void
     {

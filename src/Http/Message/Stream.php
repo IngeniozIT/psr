@@ -21,6 +21,7 @@ use function ftell;
 use function fwrite;
 use function is_array;
 use function is_resource;
+use function stream_get_contents;
 use function stream_get_meta_data;
 use function str_contains;
 
@@ -156,7 +157,12 @@ class Stream implements StreamInterface
 
     public function getContents(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        if (!$this->isReadable()) {
+            throw new CannotReadStream();
+        }
+
+        /** @phpstan-ignore argument.type */
+        return stream_get_contents($this->resource);
     }
 
     public function getMetadata(?string $key = null)
