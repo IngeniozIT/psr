@@ -82,21 +82,15 @@ class Stream implements StreamInterface
 
     public function eof(): bool
     {
-        if (!is_resource($this->resource)) {
-            return true;
-        }
-
-        return feof($this->resource);
+        return !is_resource($this->resource) || feof($this->resource);
     }
 
     public function isSeekable(): bool
     {
-        if (!is_resource($this->resource)) {
-            return false;
-        }
-
-        $metadata = stream_get_meta_data($this->resource);
-        return $metadata['seekable'];
+        /** @phpstan-ignore return.type */
+        return is_resource($this->resource) ?
+            $this->getMetadata('seekable') :
+            false;
     }
 
     public function seek(int $offset, int $whence = SEEK_SET): void
@@ -116,13 +110,9 @@ class Stream implements StreamInterface
 
     public function isWritable(): bool
     {
-        if (!is_resource($this->resource)) {
-            return false;
-        }
+        $mode = $this->getMetadata('mode');
 
-        $metadata = stream_get_meta_data($this->resource);
-        $mode = $metadata['mode'];
-
+        /** @phpstan-ignore offsetAccess.nonOffsetAccessible */
         return $mode === 'r+' || in_array($mode[0] ?? '', self::WRITABLE_MODES);
     }
 
@@ -152,9 +142,14 @@ class Stream implements StreamInterface
         throw new BadMethodCallException('Not implemented');
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function getMetadata(?string $key = null)
     {
-        throw new BadMethodCallException('Not implemented');
+        if (!is_resource($this->resource)) {
+            return null;
+        }
+
+        $metadata = stream_get_meta_data($this->resource);
+
+        return $key === null ? $metadata : $metadata[$key] ?? null;
     }
 }

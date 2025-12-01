@@ -417,4 +417,45 @@ class StreamTest extends TestCase
             'detached stream' => [$detachedStream],
         ];
     }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideMetadataCases')]
+    public function testCanGetMetadata(StreamInterface $stream, ?string $key, mixed $expectedValue): void
+    {
+        $result = $stream->getMetadata($key);
+
+        self::assertEquals($expectedValue, $result);
+    }
+
+    /** @return array<string, array{StreamInterface, ?string, mixed}> */
+    public static function provideMetadataCases(): array
+    {
+        /** @var resource $tempResource */
+        $tempResource = fopen('php://temp', 'r+');
+        $tempStream = new Stream($tempResource);
+        $tempMetadata = stream_get_meta_data($tempResource);
+
+        /** @var resource $stdinResource */
+        $stdinResource = fopen('php://stdin', 'r');
+        $stdinStream = new Stream($stdinResource);
+        $stdinMetadata = stream_get_meta_data($stdinResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'all metadata from temp' => [$tempStream, null, $tempMetadata],
+            'all metadata from stdin' => [$stdinStream, null, $stdinMetadata],
+            'mode from temp' => [$tempStream, 'mode', $tempMetadata['mode']],
+            'seekable from temp' => [$tempStream, 'seekable', $tempMetadata['seekable']],
+            'wrapper_type from temp' => [$tempStream, 'wrapper_type', $tempMetadata['wrapper_type']],
+            'mode from stdin' => [$stdinStream, 'mode', $stdinMetadata['mode']],
+            'seekable from stdin' => [$stdinStream, 'seekable', $stdinMetadata['seekable']],
+            'non-existent key' => [$stdinStream, 'non_existent_key', null],
+            'detached stream with null key' => [$detachedStream, null, null],
+            'detached stream with specific key' => [$detachedStream, 'mode', null],
+        ];
+    }
 }
