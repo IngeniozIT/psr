@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Http\Message;
 
-use BadMethodCallException;
 use IngeniozIt\Psr\Http\Message\Exception\CannotReadStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotSeekStream;
 use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
@@ -39,7 +38,15 @@ class Stream implements StreamInterface
 
     public function __toString(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        if ($this->isSeekable()) {
+            $this->rewind();
+        }
+
+        if ($this->isReadable()) {
+            return $this->getContents();
+        }
+
+        return '';
     }
 
     public function close(): void

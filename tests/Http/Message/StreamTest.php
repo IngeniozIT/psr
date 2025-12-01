@@ -651,4 +651,62 @@ class StreamTest extends TestCase
             'detached stream with specific key' => [$detachedStream, 'mode', null],
         ];
     }
+
+    /** @param StreamInterface $stream */
+    #[DataProvider('provideToStringOperations')]
+    public function testToString(StreamInterface $stream, string $expectedContent): void
+    {
+        $content = (string) $stream;
+
+        self::assertEquals($expectedContent, $content);
+    }
+
+    /** @return array<string, array{StreamInterface, string}> */
+    public static function provideToStringOperations(): array
+    {
+        /** @var resource $emptyResource */
+        $emptyResource = fopen('php://temp', 'r+');
+        $emptyStream = new Stream($emptyResource);
+
+        /** @var resource $fullContentResource */
+        $fullContentResource = fopen('php://temp', 'r+');
+        fwrite($fullContentResource, 'foobar');
+        rewind($fullContentResource);
+        $fullContentStream = new Stream($fullContentResource);
+
+        /** @var resource $fromMiddlePositionResource */
+        $fromMiddlePositionResource = fopen('php://temp', 'r+');
+        fwrite($fromMiddlePositionResource, 'foobar');
+        fseek($fromMiddlePositionResource, 3);
+        $fromMiddlePositionStream = new Stream($fromMiddlePositionResource);
+
+        // Non-seekable stream: put content, read part of it, expect remaining content
+        /** @var resource $nonSeekableResource */
+        $nonSeekableResource = popen('printf "foobar"', 'r');
+        fread($nonSeekableResource, 3); // Read first 3 bytes ("foo"), position is now at 3
+        $nonSeekableStream = new Stream($nonSeekableResource);
+
+        $nonReadableFile = tempnam(sys_get_temp_dir(), 'test');
+        /** @var resource $nonReadableResource */
+        $nonReadableResource = fopen($nonReadableFile, 'w');
+        fwrite($nonReadableResource, 'test content');
+        rewind($nonReadableResource);
+        $nonReadableStream = new Stream($nonReadableResource);
+
+        /** @var resource $detachedResource */
+        $detachedResource = fopen('php://temp', 'r+');
+        fwrite($detachedResource, 'test content');
+        rewind($detachedResource);
+        $detachedStream = new Stream($detachedResource);
+        $detachedStream->detach();
+
+        return [
+            'empty stream' => [$emptyStream, ''],
+            'full content from start' => [$fullContentStream, 'foobar'],
+            'content from middle position' => [$fromMiddlePositionStream, 'foobar'],
+            'non-seekable stream with partial read' => [$nonSeekableStream, 'bar'],
+            'non-readable stream' => [$nonReadableStream, ''],
+            'detached stream' => [$detachedStream, ''],
+        ];
+    }
 }
