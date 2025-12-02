@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Tests\Http\Message;
 
-use IngeniozIt\Psr\Http\Message\Exception\InvalidHeaderName;
-use IngeniozIt\Psr\Http\Message\Exception\InvalidHeaderValue;
-use IngeniozIt\Psr\Http\Message\Exception\InvalidProtocolVersion;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidHeaderName;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidHeaderValue;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidProtocolVersion;
 use IngeniozIt\Psr\Http\Message\Message;
 use IngeniozIt\Psr\Http\Message\Stream;
 use PHPUnit\Framework\Attributes\DataProvider;

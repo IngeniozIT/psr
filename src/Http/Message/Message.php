@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Http\Message;
 
-use BadMethodCallException;
-use IngeniozIt\Psr\Http\Message\Exception\InvalidHeaderName;
-use IngeniozIt\Psr\Http\Message\Exception\InvalidHeaderValue;
-use IngeniozIt\Psr\Http\Message\Exception\InvalidProtocolVersion;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidHeaderName;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidHeaderValue;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidProtocolVersion;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\StreamInterface;
 

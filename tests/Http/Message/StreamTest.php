@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Tests\Http\Message;
 
-use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
-use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
-use IngeniozIt\Psr\Http\Message\Exception\CannotSeekStream;
-use IngeniozIt\Psr\Http\Message\Exception\CannotReadStream;
-use IngeniozIt\Psr\Http\Message\Exception\CannotWriteToStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotReadStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotSeekStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotTellStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotWriteToStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\InvalidResource;
+use IngeniozIt\Psr\Http\Message\Stream;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
-use IngeniozIt\Psr\Http\Message\Stream;
 
 class StreamTest extends TestCase
 {

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Http\Message;
 
-use IngeniozIt\Psr\Http\Message\Exception\CannotReadStream;
-use IngeniozIt\Psr\Http\Message\Exception\CannotSeekStream;
-use IngeniozIt\Psr\Http\Message\Exception\CannotTellStream;
-use IngeniozIt\Psr\Http\Message\Exception\CannotWriteToStream;
-use IngeniozIt\Psr\Http\Message\Exception\InvalidResource;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotReadStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotSeekStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotTellStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\CannotWriteToStream;
+use IngeniozIt\Psr\Http\Message\Exception\Stream\InvalidResource;
 use Psr\Http\Message\StreamInterface;
 
-use function feof;
 use function fclose;
+use function feof;
 use function fread;
 use function fseek;
 use function fstat;
@@ -20,9 +20,9 @@ use function ftell;
 use function fwrite;
 use function is_array;
 use function is_resource;
+use function str_contains;
 use function stream_get_contents;
 use function stream_get_meta_data;
-use function str_contains;
 
 class Stream implements StreamInterface
 {

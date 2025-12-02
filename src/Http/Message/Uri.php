@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace IngeniozIt\Psr\Http\Message;
 
 use BadMethodCallException;
-use IngeniozIt\Psr\Http\Message\Exception\InvalidScheme;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidScheme;
 use InvalidArgumentException;
 use Psr\Http\Message\UriInterface;
 

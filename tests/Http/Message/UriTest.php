@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Tests\Http\Message;
 
-use IngeniozIt\Psr\Http\Message\Exception\InvalidScheme;
+use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidScheme;
 use IngeniozIt\Psr\Http\Message\Uri;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

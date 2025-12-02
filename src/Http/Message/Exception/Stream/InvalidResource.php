@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace IngeniozIt\Psr\Http\Message\Exception;
+namespace IngeniozIt\Psr\Http\Message\Exception\Stream;
 
 use InvalidArgumentException;
 
