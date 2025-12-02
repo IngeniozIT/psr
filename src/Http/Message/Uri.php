@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace IngeniozIt\Psr\Http\Message;
 
 use BadMethodCallException;
-use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidScheme;
-use InvalidArgumentException;
+use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidScheme;
+use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidUri;
 use Psr\Http\Message\UriInterface;
 
 use function ctype_alpha;
@@ -22,7 +22,7 @@ readonly class Uri implements UriInterface
     {
         $parsedUri = parse_url($uri);
         if ($parsedUri === false) {
-            throw new InvalidArgumentException("Invalid URI: $uri");
+            throw new InvalidUri($uri);
         }
 
         $this->scheme = $this->normalizeScheme($parsedUri['scheme'] ?? '');

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Tests\Http\Message;
 
-use IngeniozIt\Psr\Http\Message\Exception\Message\InvalidScheme;
+use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidScheme;
+use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidUri;
 use IngeniozIt\Psr\Http\Message\Uri;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -17,6 +18,16 @@ class UriTest extends TestCase
         $uri = new Uri('https://example.com');
 
         self::assertInstanceOf(UriInterface::class, $uri);
+    }
+
+    public function testNeedsAValidUri(): void
+    {
+        $badUri = 'https:///path';
+
+        self::expectException(InvalidUri::class);
+        self::expectExceptionMessage("Invalid URI '$badUri' provided");
+
+        new Uri($badUri);
     }
 
     public function testHasAScheme(): void
