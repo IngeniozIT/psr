@@ -69,6 +69,9 @@ endif
 test: check-docker check-compose-file check-composer start # Run tests
 	$(COMPOSE_CMD) exec $(DOCKER_NAME) composer fulltest
 
+doc: check-docker check-compose-file check-composer start # Generate documentation
+	$(COMPOSE_CMD) exec $(DOCKER_NAME) composer doc
+
 build: check-docker check-compose-file # Build the Docker image
 	$(COMPOSE_CMD) build --no-cache
 

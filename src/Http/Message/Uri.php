@@ -17,6 +17,8 @@ use function strtolower;
 readonly class Uri implements UriInterface
 {
     private string $scheme;
+    private string $user;
+    private ?string $password;
 
     public function __construct(string $uri)
     {
@@ -26,6 +28,8 @@ readonly class Uri implements UriInterface
         }
 
         $this->scheme = $this->normalizeScheme($parsedUri['scheme'] ?? '');
+        $this->user = isset($parsedUri['user']) ? $this->normalizeUri($parsedUri['user']) : '';
+        $this->password = isset($parsedUri['pass']) ? $this->normalizeUri($parsedUri['pass']) : null;
     }
 
     public function getScheme(): string
@@ -40,7 +44,8 @@ readonly class Uri implements UriInterface
 
     public function getUserInfo(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        return $this->user .
+            ($this->password !== null ? ':' . $this->password : '');
     }
 
     public function getHost(): string
@@ -96,10 +101,19 @@ readonly class Uri implements UriInterface
         return strtolower($scheme);
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function withUserInfo(string $user, ?string $password = null): UriInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        $normalizedUser = $this->normalizeUri($user);
+        $normalizedPassword = $password !== null ? $this->normalizeUri($password) : null;
+
+        if ($this->user === $normalizedUser && $this->password === $normalizedPassword) {
+            return $this;
+        }
+
+        return clone($this, [
+            'user' => $normalizedUser,
+            'password' => $normalizedPassword,
+        ]);
     }
 
     /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
@@ -135,5 +149,10 @@ readonly class Uri implements UriInterface
     public function __toString(): string
     {
         throw new BadMethodCallException('Not implemented');
+    }
+
+    private function normalizeUri(string $string): string
+    {
+        return rawurlencode(rawurldecode($string));
     }
 }

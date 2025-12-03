@@ -39,6 +39,15 @@ class UriTest extends TestCase
         self::assertEquals('https', $scheme);
     }
 
+    public function testSchemeIsEmptyByDefault(): void
+    {
+        $uri = new Uri('example.com');
+
+        $scheme = $uri->getScheme();
+
+        self::assertEquals('', $scheme);
+    }
+
     public function testSchemeIsNormalized(): void
     {
         $uri = new Uri('hTtPs0+-.://example.com');
@@ -48,13 +57,21 @@ class UriTest extends TestCase
         self::assertEquals('https0+-.', $scheme);
     }
 
-    public function testSchemeIsEmptyByDefault(): void
+    #[DataProvider('provideInvalidSchemes')]
+    public function testSchemeMustBeValid(string $scheme, string $message): void
     {
-        $uri = new Uri('example.com');
+        self::expectException(InvalidScheme::class);
+        self::expectExceptionMessage($message);
+        new Uri('https://example.com')->withScheme($scheme);
+    }
 
-        $scheme = $uri->getScheme();
-
-        self::assertEquals('', $scheme);
+    /** @return array<string, array{string, string}> */
+    public static function provideInvalidSchemes(): array
+    {
+        return [
+            'invalid first character' => ['-ttps', "Invalid scheme '-ttps': first character must be a letter"],
+            'invalid characters' => ['h%tps', "Invalid scheme 'h%tps': scheme contains invalid characters"],
+        ];
     }
 
     public function testCanChangeScheme(): void
@@ -76,20 +93,80 @@ class UriTest extends TestCase
         self::assertSame($uri, $uri2);
     }
 
-    #[DataProvider('provideInvalidSchemes')]
-    public function testSchemeMustBeValid(string $scheme, string $message): void
+    public function testHasUserInfo(): void
     {
-        self::expectException(InvalidScheme::class);
-        self::expectExceptionMessage($message);
-        new Uri('https://example.com')->withScheme($scheme);
+        $uri = new Uri('https://user@example.com');
+
+        $userInfo = $uri->getUserInfo();
+
+        self::assertEquals('user', $userInfo);
     }
 
-    /** @return array<string, array{string, string}> */
-    public static function provideInvalidSchemes(): array
+    public function testUserInfoIsEmptyByDefault(): void
+    {
+        $uri = new Uri('https://example.com');
+
+        $userInfo = $uri->getUserInfo();
+
+        self::assertEquals('', $userInfo);
+    }
+
+    public function testCanHaveAPassword(): void
+    {
+        $uri = new Uri('https://user:password@example.com');
+
+        $userInfo = $uri->getUserInfo();
+
+        self::assertEquals('user:password', $userInfo);
+    }
+
+    public function testEncodesUserInfo(): void
+    {
+        $uri = new Uri('https://user+:password+@example.com');
+
+        $userInfo = $uri->getUserInfo();
+
+        self::assertEquals('user%2B:password%2B', $userInfo);
+    }
+
+    public function testDoesNotEncodeUserInfoTwice(): void
+    {
+        $uri = new Uri('https://user%25:password%25@example.com');
+
+        $userInfo = $uri->getUserInfo();
+
+        self::assertEquals('user%25:password%25', $userInfo);
+    }
+
+    #[DataProvider('provideUserInfo')]
+    public function testCanChangeUserInfo(string $newUser, ?string $newPassword, string $expectedUserInfo): void
+    {
+        $uri = new Uri('https://user:pass@example.com')
+            ->withUserInfo($newUser, $newPassword);
+
+        $userInfo = $uri->getUserInfo();
+
+        self::assertEquals($expectedUserInfo, $userInfo);
+    }
+
+    /** @return array<string, array{string, ?string, string}> */
+    public static function provideUserInfo(): array
     {
         return [
-            'invalid first character' => ['-ttps', "Invalid scheme '-ttps': first character must be a letter"],
-            'invalid characters' => ['h%tps', "Invalid scheme 'h%tps': scheme contains invalid characters"],
+            'without password' => ['newUser', null, 'newUser'],
+            'with password' => ['newUser', 'newPass', 'newUser:newPass'],
+            'with the same user' => ['user', null, 'user'],
+            'with special characters' => ['newUser+', 'newPass+', 'newUser%2B:newPass%2B'],
+            'with special characters encoded once' => ['newUser%2B', 'newPass%2B', 'newUser%2B:newPass%2B'],
         ];
+    }
+
+    public function testReturnsSameInstanceIfUserInfoDoesNotChange(): void
+    {
+        $uri = new Uri('https://user:pass@example.com');
+
+        $uri2 = $uri->withUserInfo('user', 'pass');
+
+        self::assertSame($uri, $uri2);
     }
 }
