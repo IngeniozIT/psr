@@ -48,6 +48,15 @@ class UriTest extends TestCase
         self::assertEquals('https0+-.', $scheme);
     }
 
+    public function testSchemeIsEmptyByDefault(): void
+    {
+        $uri = new Uri('example.com');
+
+        $scheme = $uri->getScheme();
+
+        self::assertEquals('', $scheme);
+    }
+
     public function testCanChangeScheme(): void
     {
         $uri = new Uri('https://example.com')

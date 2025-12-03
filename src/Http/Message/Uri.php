@@ -81,6 +81,10 @@ readonly class Uri implements UriInterface
 
     private function normalizeScheme(string $scheme): string
     {
+        if ($scheme === '') {
+            return '';
+        }
+
         if (!ctype_alpha($scheme[0])) {
             throw InvalidScheme::invalidFirstCharacter($scheme);
         }
