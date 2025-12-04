@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace IngeniozIt\Psr\Http\Message;
 
 use BadMethodCallException;
+use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidPort;
 use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidScheme;
 use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidUri;
 use Psr\Http\Message\UriInterface;
@@ -19,6 +20,8 @@ readonly class Uri implements UriInterface
     private string $scheme;
     private string $user;
     private ?string $password;
+    private ?int $port;
+    private bool $isStandardPort;
 
     public function __construct(string $uri)
     {
@@ -30,6 +33,8 @@ readonly class Uri implements UriInterface
         $this->scheme = $this->normalizeScheme($parsedUri['scheme'] ?? '');
         $this->user = isset($parsedUri['user']) ? $this->normalizeUri($parsedUri['user']) : '';
         $this->password = isset($parsedUri['pass']) ? $this->normalizeUri($parsedUri['pass']) : null;
+        $this->port = isset($parsedUri['port']) ? $this->normalizePort((int) $parsedUri['port']) : null;
+        $this->isStandardPort = $this->isStandardPort($this->scheme, $this->port);
     }
 
     public function getScheme(): string
@@ -55,7 +60,7 @@ readonly class Uri implements UriInterface
 
     public function getPort(): ?int
     {
-        throw new BadMethodCallException('Not implemented');
+        return $this->isStandardPort ? null : $this->port;
     }
 
     public function getPath(): string
@@ -81,6 +86,7 @@ readonly class Uri implements UriInterface
             $this :
             clone($this, [
                 'scheme' => $normalizedScheme,
+                'isStandardPort' => $this->isStandardPort($normalizedScheme, $this->port),
             ]);
     }
 
@@ -122,10 +128,32 @@ readonly class Uri implements UriInterface
         throw new BadMethodCallException('Not implemented');
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function withPort(?int $port): UriInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        $normalizedPort = $port !== null ? $this->normalizePort($port) : null;
+
+        if ($this->port === $normalizedPort) {
+            return $this;
+        }
+
+        return clone($this, [
+            'port' => $normalizedPort,
+            'isStandardPort' => $this->isStandardPort($this->scheme, $normalizedPort),
+        ]);
+    }
+
+    private function normalizePort(int $port): int
+    {
+        if ($port < 1 || $port > 65535) {
+            throw new InvalidPort($port);
+        }
+
+        return $port;
+    }
+
+    private function isStandardPort(string $scheme, ?int $port): bool
+    {
+        return UriPort::isDefault($scheme, $port);
     }
 
     /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */

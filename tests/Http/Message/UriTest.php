@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Tests\Http\Message;
 
+use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidPort;
 use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidScheme;
 use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidUri;
 use IngeniozIt\Psr\Http\Message\Uri;
@@ -166,6 +167,95 @@ class UriTest extends TestCase
         $uri = new Uri('https://user:pass@example.com');
 
         $uri2 = $uri->withUserInfo('user', 'pass');
+
+        self::assertSame($uri, $uri2);
+    }
+
+    public function testHasAPort(): void
+    {
+        $uri = new Uri('https://example.com:1');
+
+        $port = $uri->getPort();
+
+        self::assertEquals(1, $port);
+    }
+
+    public function testPortIsNullByDefault(): void
+    {
+        $uri = new Uri('https://example.com');
+
+        $port = $uri->getPort();
+
+        self::assertNull($port);
+    }
+
+    public function testCanRemovePort(): void
+    {
+        $uri = new Uri('https://example.com:8080')
+            ->withPort(null);
+
+        $port = $uri->getPort();
+
+        self::assertNull($port);
+    }
+
+    public function testCanChangePort(): void
+    {
+        $uri = new Uri('https://example.com:8080')
+            ->withPort(65535);
+
+        $port = $uri->getPort();
+
+        self::assertEquals(65535, $port);
+    }
+
+    #[DataProvider('provideInvalidPorts')]
+    public function testPortMustBeValid(int $port): void
+    {
+        self::expectException(InvalidPort::class);
+        self::expectExceptionMessage("Invalid port $port");
+        new Uri('https://example.com')
+            ->withPort($port);
+    }
+
+    /** @return array<string, array{int}> */
+    public static function provideInvalidPorts(): array
+    {
+        return [
+            '>= 1' => [0],
+            '<= 65535' => [65536],
+        ];
+    }
+
+    #[DataProvider('provideStandardPorts')]
+    public function testReturnsNoPortIfItIsTheStandardForThisScheme(string $scheme, int $port): void
+    {
+        $uri = new Uri("$scheme://example.com:$port");
+
+        $port = $uri->getPort();
+
+        self::assertNull($port);
+    }
+
+    /** @return array<string, array{string, int}> */
+    public static function provideStandardPorts(): array
+    {
+        return [
+            'http' => ['http', 80],
+            'https' => ['https', 443],
+            'ftp' => ['ftp', 21],
+            'sftp' => ['sftp', 22],
+            'ssh' => ['ssh', 22],
+            'ws' => ['ws', 80],
+            'wss' => ['wss', 443],
+        ];
+    }
+
+    public function testReturnsSameInstanceIfPortDoesNotChange(): void
+    {
+        $uri = new Uri('https://example.com:8080');
+
+        $uri2 = $uri->withPort(8080);
 
         self::assertSame($uri, $uri2);
     }
