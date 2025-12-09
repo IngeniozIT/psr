@@ -11,7 +11,6 @@ use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidUri;
 use Psr\Http\Message\UriInterface;
 
 use function ctype_alpha;
-use function parse_url;
 use function preg_match;
 use function strtolower;
 
@@ -22,19 +21,72 @@ readonly class Uri implements UriInterface
     private ?string $password;
     private ?int $port;
     private bool $isStandardPort;
+    private string $host;
 
     public function __construct(string $uri)
     {
-        $parsedUri = parse_url($uri);
-        if ($parsedUri === false) {
-            throw new InvalidUri($uri);
+        $parsedUri = $this->parseUri($uri);
+
+        $this->scheme = $this->normalizeScheme($parsedUri['scheme']);
+        $this->user = $this->normalizeUri($parsedUri['user']);
+        $this->password = $parsedUri['pass'] !== '' ? $this->normalizeUri($parsedUri['pass']) : null;
+        $this->host = $parsedUri['host'];
+        $this->port = $parsedUri['port'] !== '' ? $this->normalizePort((int) $parsedUri['port']) : null;
+        $this->isStandardPort = $this->isStandardPort($this->scheme, $this->port);
+    }
+
+    private function parseUri(string $url): array
+    {
+        $pattern = '~^
+            (?:(?<scheme>[^:/?#]+):)?
+            (?:(?<authority>
+                //
+                (?:(?<user>[^:@/?#]*)(?::(?<pass>[^@/?#]*))?@)?
+                (?<host>\[[^\]/?#]*\]|[^:/?#]*)
+                (?::(?<port>\d*))?
+            ))?
+            (?<path>[^?#]*)
+            (?:\?(?<query>[^#]*))?
+            (?:\#(?<fragment>.*))?
+        $~x';
+
+        preg_match($pattern, $url, $m);
+
+        $uriParts = [
+            'scheme'   => $m['scheme'] ?? '',
+            'host'     => $m['host'] ?? '',
+            'port'     => $m['port'] ?? '',
+            'user'     => $m['user'] ?? '',
+            'pass'     => $m['pass'] ?? '',
+            'path'     => $m['path'] ?? '',
+        ];
+
+        if (
+            $this->uriHasMissingParts($uriParts) ||
+            $this->uriHasAuthorityWithoutHost($m['authority'], $uriParts) ||
+            $this->uriHasInvalidIpv6Host($uriParts['host'])
+        ) {
+            throw new InvalidUri($url);
         }
 
-        $this->scheme = $this->normalizeScheme($parsedUri['scheme'] ?? '');
-        $this->user = isset($parsedUri['user']) ? $this->normalizeUri($parsedUri['user']) : '';
-        $this->password = isset($parsedUri['pass']) ? $this->normalizeUri($parsedUri['pass']) : null;
-        $this->port = isset($parsedUri['port']) ? $this->normalizePort((int) $parsedUri['port']) : null;
-        $this->isStandardPort = $this->isStandardPort($this->scheme, $this->port);
+        return $uriParts;
+    }
+
+    /** @param array<string, string> $uriParts */
+    private function uriHasMissingParts(array $uriParts): bool
+    {
+        return $uriParts['scheme'] === '' && $uriParts['host'] === '' && $uriParts['path'] === '';
+    }
+
+    /** @param array<string, string> $uriParts */
+    private function uriHasAuthorityWithoutHost(string $authority, array $uriParts): bool
+    {
+        return $authority !== '' && $uriParts['host'] === '' && $uriParts['scheme'] !== 'file';
+    }
+
+    private function uriHasInvalidIpv6Host(string $host): bool
+    {
+        return str_starts_with($host, '[') && !str_ends_with($host, ']');
     }
 
     public function getScheme(): string
@@ -55,7 +107,7 @@ readonly class Uri implements UriInterface
 
     public function getHost(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        return $this->host;
     }
 
     public function getPort(): ?int

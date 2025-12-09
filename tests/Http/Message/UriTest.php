@@ -21,14 +21,23 @@ class UriTest extends TestCase
         self::assertInstanceOf(UriInterface::class, $uri);
     }
 
-    public function testNeedsAValidUri(): void
+    #[DataProvider('provideInvalidUri')]
+    public function testNeedsAValidUri(string $uri): void
     {
-        $badUri = 'https:///path';
-
         self::expectException(InvalidUri::class);
-        self::expectExceptionMessage("Invalid URI '$badUri' provided");
+        self::expectExceptionMessage("Invalid URI '$uri' provided");
 
-        new Uri($badUri);
+        new Uri($uri);
+    }
+
+    public static function provideInvalidUri(): array
+    {
+        return [
+            'empty uri' => [''],
+            'no scheme, host, nor path' => ['?foo#bar'],
+            'authority without host' => ['https://user:pass@:80'],
+            'non-closed ipv6' => ['https://[ipv6/path'],
+        ];
     }
 
     public function testHasAScheme(): void
@@ -169,6 +178,32 @@ class UriTest extends TestCase
         $uri2 = $uri->withUserInfo('user', 'pass');
 
         self::assertSame($uri, $uri2);
+    }
+
+    #[DataProvider('provideHostNames')]
+    public function testHasAHost(string $givenHost, string $expectedHost): void
+    {
+        $uri = new Uri($givenHost);
+
+        $host = $uri->getHost();
+
+        self::assertEquals($expectedHost, $host);
+    }
+
+    public static function provideHostNames(): array
+    {
+        return [
+            'domain name' => ['//example.com', 'example.com'],
+        ];
+    }
+
+    public function testHostIsEmptyByDefault(): void
+    {
+        $uri = new Uri('/');
+
+        $host = $uri->getHost();
+
+        self::assertEquals('', $host);
     }
 
     public function testHasAPort(): void
