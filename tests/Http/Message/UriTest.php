@@ -103,6 +103,26 @@ class UriTest extends TestCase
         self::assertSame($uri, $uri2);
     }
 
+    #[DataProvider('provideAuthority')]
+    public function testHasAnAuthority(string $uri, string $expectedAuthority): void
+    {
+        $uri = new Uri($uri);
+
+        $authority = $uri->getAuthority();
+
+        self::assertEquals($expectedAuthority, $authority);
+    }
+
+    public static function provideAuthority(): array
+    {
+        return [
+            'host' => ['https://example.com/path', 'example.com'],
+            'user info + host' => ['https://user:pass@example.com/path', 'user:pass@example.com'],
+            'host + port' => ['https://example.com:8080/path', 'example.com:8080'],
+            'host + default port' => ['http://example.com:80/path', 'example.com'],
+        ];
+    }
+
     public function testHasUserInfo(): void
     {
         $uri = new Uri('https://user@example.com');
@@ -194,6 +214,7 @@ class UriTest extends TestCase
     {
         return [
             'domain name' => ['//example.com', 'example.com'],
+            'normalized to lowercase' => ['//EXAMPLE.COM', 'example.com'],
         ];
     }
 

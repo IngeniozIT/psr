@@ -30,7 +30,7 @@ readonly class Uri implements UriInterface
         $this->scheme = $this->normalizeScheme($parsedUri['scheme']);
         $this->user = $this->normalizeUri($parsedUri['user']);
         $this->password = $parsedUri['pass'] !== '' ? $this->normalizeUri($parsedUri['pass']) : null;
-        $this->host = $parsedUri['host'];
+        $this->host = $this->normalizeHost($parsedUri['host']);
         $this->port = $parsedUri['port'] !== '' ? $this->normalizePort((int) $parsedUri['port']) : null;
         $this->isStandardPort = $this->isStandardPort($this->scheme, $this->port);
     }
@@ -96,7 +96,13 @@ readonly class Uri implements UriInterface
 
     public function getAuthority(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        $userInfo = $this->getUserInfo();
+        $port = $this->getPort();
+
+        return
+            ($userInfo !== '' ? $userInfo . '@' : '') .
+            $this->host .
+            ($port !== null ? ':' . $port : '');
     }
 
     public function getUserInfo(): string
@@ -178,6 +184,11 @@ readonly class Uri implements UriInterface
     public function withHost(string $host): UriInterface
     {
         throw new BadMethodCallException('Not implemented');
+    }
+
+    private function normalizeHost(string $host): string
+    {
+        return strtolower($host);
     }
 
     public function withPort(?int $port): UriInterface
