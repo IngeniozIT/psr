@@ -30,6 +30,7 @@ class UriTest extends TestCase
         new Uri($uri);
     }
 
+    /** @return array<string, array{string}> */
     public static function provideInvalidUri(): array
     {
         return [
@@ -113,6 +114,7 @@ class UriTest extends TestCase
         self::assertEquals($expectedAuthority, $authority);
     }
 
+    /** @return array<string, array{string, string}> */
     public static function provideAuthority(): array
     {
         return [
@@ -210,6 +212,7 @@ class UriTest extends TestCase
         self::assertEquals($expectedHost, $host);
     }
 
+    /** @return array<string, array{string, string}> */
     public static function provideHostNames(): array
     {
         return [
@@ -225,6 +228,25 @@ class UriTest extends TestCase
         $host = $uri->getHost();
 
         self::assertEquals('', $host);
+    }
+
+    public function testCanChangeHost(): void
+    {
+        $uri = new Uri('https://example.com')
+            ->withHost('example2.com');
+
+        $host = $uri->getHost();
+
+        self::assertEquals('example2.com', $host);
+    }
+
+    public function testReturnsSameInstanceIfHostDoesNotChange(): void
+    {
+        $uri = new Uri('https://example.com');
+
+        $uri2 = $uri->withHost('example.com');
+
+        self::assertSame($uri, $uri2);
     }
 
     public function testHasAPort(): void
