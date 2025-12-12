@@ -66,7 +66,11 @@
     "stan": "vendor/bin/phpstan analyze -c ./quality/phpstan.neon.dist",
     "smells": "vendor/bin/phpmd src/ text quality/phpmd.xml.dist",
     "refactor": "vendor/bin/rector process --config ./quality/rector.php",
-    "refactor-dry": "vendor/bin/rector process --config ./quality/rector.php --dry-run"
+    "refactor-dry": "vendor/bin/rector process --config ./quality/rector.php --dry-run",
+    "watch": [
+      "Composer\\Config::disableProcessTimeout",
+      "while true; do find src tests -name '*.php' | entr -d -s 'XDEBUG_MODE=coverage vendor/bin/phpunit -c ./quality/phpunit.xml.dist --coverage-html ./doc/code-coverage --coverage-text=./tmp/coverage.txt --testdox && sed \"s/\\x1b\\[[0-9;]*m//g\" ./tmp/coverage.txt | grep \"Lines:\" | head -1 | awk \"{print \\\"✓ Coverage: \\\" \\$2}\" && (composer mutation > ./tmp/mutation.log 2>&1; sed \"s/\\x1b\\[[0-9;]*m//g\" ./tmp/mutation.log | grep \"Covered Code MSI\" | awk \"{print \\\"✓ Mutations: \\\" \\$4}\")'; done"
+    ]
   },
   "scripts-descriptions": {
     "serve": "Run a local web server",

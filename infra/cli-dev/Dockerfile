@@ -32,6 +32,8 @@ RUN --mount=type=cache,target=/var/cache/apk \
     && docker-php-ext-enable xdebug \
     && apk del .build-deps
 
+RUN apk add --no-cache entr
+
 # Install Composer from official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

@@ -72,6 +72,9 @@ test: check-docker check-compose-file check-composer start # Run tests
 doc: check-docker check-compose-file check-composer start # Generate documentation
 	$(COMPOSE_CMD) exec $(DOCKER_NAME) composer doc
 
+watch: check-docker check-compose-file check-composer start # Start watch mode
+	$(COMPOSE_CMD) exec $(DOCKER_NAME) composer watch
+
 build: check-docker check-compose-file # Build the Docker image
 	$(COMPOSE_CMD) build --no-cache
 
