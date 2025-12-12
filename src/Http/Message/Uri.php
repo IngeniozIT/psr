@@ -20,6 +20,7 @@ readonly class Uri implements UriInterface
     private string $host;
     private string $path;
     private string $query;
+    private string $fragment;
 
     public function __construct(string $uri)
     {
@@ -33,9 +34,10 @@ readonly class Uri implements UriInterface
         $this->isStandardPort = $this->isStandardPort($this->scheme, $this->port);
         $this->path = UriNormalizer::normalizePath($parsedUri['path']);
         $this->query = UriNormalizer::normalizeQuery($parsedUri['query']);
+        $this->fragment = UriNormalizer::normalizeFragment($parsedUri['fragment']);
     }
 
-    /** @return array{scheme: string, host: string, port: string, user: string, pass: string, path: string, query: string} */
+    /** @return array{scheme: string, host: string, port: string, user: string, pass: string, path: string, query: string, fragment: string} */
     private function parseUri(string $url): array
     {
         $pattern = '~^
@@ -61,6 +63,7 @@ readonly class Uri implements UriInterface
             'pass'     => $matches['pass'] ?? '',
             'path'     => $matches['path'] ?? '',
             'query'     => $matches['query'] ?? '',
+            'fragment'     => $matches['fragment'] ?? '',
         ];
 
         if (
@@ -135,7 +138,7 @@ readonly class Uri implements UriInterface
 
     public function getFragment(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        return $this->fragment;
     }
 
     public function withScheme(string $scheme): UriInterface
@@ -223,10 +226,17 @@ readonly class Uri implements UriInterface
         ]);
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function withFragment(string $fragment): UriInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        $normalizedFragment = UriNormalizer::normalizeFragment($fragment);
+
+        if ($this->fragment === $normalizedFragment) {
+            return $this;
+        }
+
+        return clone($this, [
+            'fragment' => $normalizedFragment,
+        ]);
     }
 
     public function __toString(): string

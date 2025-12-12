@@ -421,4 +421,45 @@ class UriTest extends TestCase
 
         self::assertSame($uri, $uri2);
     }
+
+    #[DataProvider('provideFragment')]
+    public function testHasAFragment(string $uri, string $expectedFragment): void
+    {
+        $uri = new Uri($uri);
+
+        $fragment = $uri->getFragment();
+
+        self::assertEquals($expectedFragment, $fragment);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function provideFragment(): array
+    {
+        return [
+            'normal fragment' => ['https://example.com#fragment', 'fragment'],
+            'empty fragment' => ['https://example.com#', ''],
+            'no fragment' => ['https://example.com', ''],
+            'fragment is normalized' => ['https://example.com#foo+', 'foo%2B'],
+            'fragment is not double-encoded' => ['https://example.com#foo%2B', 'foo%2B'],
+        ];
+    }
+
+    public static function testCanChangeFragment(): void
+    {
+        $uri = new Uri('https://example.com#fragment')
+            ->withFragment('foo');
+
+        $fragment = $uri->getFragment();
+
+        self::assertEquals('foo', $fragment);
+    }
+
+    public function testReturnsSameInstanceIfFragmentDoesNotChange(): void
+    {
+        $uri = new Uri('https://example.com#fragment');
+
+        $uri2 = $uri->withFragment('fragment');
+
+        self::assertSame($uri, $uri2);
+    }
 }

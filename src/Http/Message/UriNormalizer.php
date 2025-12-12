@@ -71,6 +71,11 @@ class UriNormalizer
         return implode('=', array_map(self::percentEncode(...), explode('=', $queryPart)));
     }
 
+    public static function normalizeFragment(string $fragment): string
+    {
+        return self::percentEncode($fragment);
+    }
+
     private static function percentEncode(string $string): string
     {
         return rawurlencode(rawurldecode($string));
