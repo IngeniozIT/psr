@@ -19,21 +19,23 @@ readonly class Uri implements UriInterface
     private bool $isStandardPort;
     private string $host;
     private string $path;
+    private string $query;
 
     public function __construct(string $uri)
     {
         $parsedUri = $this->parseUri($uri);
 
         $this->scheme = UriNormalizer::normalizeScheme($parsedUri['scheme']);
-        $this->user = UriNormalizer::normalizeUri($parsedUri['user']);
-        $this->password = $parsedUri['pass'] !== '' ? UriNormalizer::normalizeUri($parsedUri['pass']) : null;
+        $this->user = UriNormalizer::normalizeUser($parsedUri['user']);
+        $this->password = $parsedUri['pass'] !== '' ? UriNormalizer::normalizePassword($parsedUri['pass']) : null;
         $this->host = UriNormalizer::normalizeHost($parsedUri['host']);
         $this->port = $parsedUri['port'] !== '' ? UriNormalizer::normalizePort((int) $parsedUri['port']) : null;
         $this->isStandardPort = $this->isStandardPort($this->scheme, $this->port);
         $this->path = UriNormalizer::normalizePath($parsedUri['path']);
+        $this->query = UriNormalizer::normalizeQuery($parsedUri['query']);
     }
 
-    /** @return array{scheme: string, host: string, port: string, user: string, pass: string, path: string} */
+    /** @return array{scheme: string, host: string, port: string, user: string, pass: string, path: string, query: string} */
     private function parseUri(string $url): array
     {
         $pattern = '~^
@@ -58,6 +60,7 @@ readonly class Uri implements UriInterface
             'user'     => $matches['user'] ?? '',
             'pass'     => $matches['pass'] ?? '',
             'path'     => $matches['path'] ?? '',
+            'query'     => $matches['query'] ?? '',
         ];
 
         if (
@@ -127,7 +130,7 @@ readonly class Uri implements UriInterface
 
     public function getQuery(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        return $this->query;
     }
 
     public function getFragment(): string
@@ -149,8 +152,8 @@ readonly class Uri implements UriInterface
 
     public function withUserInfo(string $user, ?string $password = null): UriInterface
     {
-        $normalizedUser = UriNormalizer::normalizeUri($user);
-        $normalizedPassword = $password !== null ? UriNormalizer::normalizeUri($password) : null;
+        $normalizedUser = UriNormalizer::normalizeUser($user);
+        $normalizedPassword = $password !== null ? UriNormalizer::normalizePassword($password) : null;
 
         if ($this->user === $normalizedUser && $this->password === $normalizedPassword) {
             return $this;
@@ -207,10 +210,17 @@ readonly class Uri implements UriInterface
         ]);
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function withQuery(string $query): UriInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        $normalizedQuery = UriNormalizer::normalizeQuery($query);
+
+        if ($this->query === $normalizedQuery) {
+            return $this;
+        }
+
+        return clone($this, [
+            'query' => $normalizedQuery,
+        ]);
     }
 
     /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */

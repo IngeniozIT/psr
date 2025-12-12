@@ -379,4 +379,46 @@ class UriTest extends TestCase
 
         self::assertSame($uri, $uri2);
     }
+
+    #[DataProvider('provideQueries')]
+    public function testHasAQuery(string $uri, string $expectedQuery): void
+    {
+        $uri = new Uri($uri);
+
+        $query = $uri->getQuery();
+
+        self::assertEquals($expectedQuery, $query);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function provideQueries(): array
+    {
+        return [
+            'normal query' => ['https://example.com?foo=bar', 'foo=bar'],
+            'empty query' => ['https://example.com?', ''],
+            'no query' => ['https://example.com', ''],
+            'query without value' => ['https://example.com?foo', 'foo'],
+            'query is normalized' => ['https://example.com?foo+', 'foo%2B'],
+            'query is not double-encoded' => ['https://example.com?foo%2B', 'foo%2B'],
+        ];
+    }
+
+    public static function testCanChangeQuery(): void
+    {
+        $uri = new Uri('https://example.com?foo=bar')
+            ->withQuery('bar=baz');
+
+        $query = $uri->getQuery();
+
+        self::assertEquals('bar=baz', $query);
+    }
+
+    public function testReturnsSameInstanceIfQueryDoesNotChange(): void
+    {
+        $uri = new Uri('https://example.com?foo=bar');
+
+        $uri2 = $uri->withQuery('foo=bar');
+
+        self::assertSame($uri, $uri2);
+    }
 }

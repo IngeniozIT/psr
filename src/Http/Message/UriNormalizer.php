@@ -32,6 +32,16 @@ class UriNormalizer
         return strtolower($scheme);
     }
 
+    public static function normalizeUser(string $user): string
+    {
+        return self::percentEncode($user);
+    }
+
+    public static function normalizePassword(string $pass): string
+    {
+        return self::percentEncode($pass);
+    }
+
     public static function normalizeHost(string $host): string
     {
         return strtolower($host);
@@ -46,13 +56,23 @@ class UriNormalizer
         return $port;
     }
 
-    public static function normalizeUri(string $string): string
-    {
-        return rawurlencode(rawurldecode($string));
-    }
-
     public static function normalizePath(string $path): string
     {
-        return implode('/', array_map(self::normalizeUri(...), explode('/', $path)));
+        return implode('/', array_map(self::percentEncode(...), explode('/', $path)));
+    }
+
+    public static function normalizeQuery(string $query): string
+    {
+        return implode('&', array_map(self::normalizeQueryPart(...), explode('&', $query)));
+    }
+
+    private static function normalizeQueryPart(string $queryPart): string
+    {
+        return implode('=', array_map(self::percentEncode(...), explode('=', $queryPart)));
+    }
+
+    private static function percentEncode(string $string): string
+    {
+        return rawurlencode(rawurldecode($string));
     }
 }
