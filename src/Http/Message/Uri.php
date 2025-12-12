@@ -18,6 +18,7 @@ readonly class Uri implements UriInterface
     private ?int $port;
     private bool $isStandardPort;
     private string $host;
+    private string $path;
 
     public function __construct(string $uri)
     {
@@ -29,6 +30,7 @@ readonly class Uri implements UriInterface
         $this->host = UriNormalizer::normalizeHost($parsedUri['host']);
         $this->port = $parsedUri['port'] !== '' ? UriNormalizer::normalizePort((int) $parsedUri['port']) : null;
         $this->isStandardPort = $this->isStandardPort($this->scheme, $this->port);
+        $this->path = UriNormalizer::normalizePath($parsedUri['path']);
     }
 
     /** @return array{scheme: string, host: string, port: string, user: string, pass: string, path: string} */
@@ -120,7 +122,7 @@ readonly class Uri implements UriInterface
 
     public function getPath(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        return $this->path;
     }
 
     public function getQuery(): string
@@ -192,10 +194,17 @@ readonly class Uri implements UriInterface
         return UriPort::isDefault($scheme, $port);
     }
 
-    /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */
     public function withPath(string $path): UriInterface
     {
-        throw new BadMethodCallException('Not implemented');
+        $normalizedPath = UriNormalizer::normalizePath($path);
+
+        if ($this->path === $normalizedPath) {
+            return $this;
+        }
+
+        return clone($this, [
+            'path' => $normalizedPath,
+        ]);
     }
 
     /** @SuppressWarnings("PHPMD.UnusedFormalParameter") */

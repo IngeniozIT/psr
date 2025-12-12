@@ -337,4 +337,46 @@ class UriTest extends TestCase
 
         self::assertSame($uri, $uri2);
     }
+
+    #[DataProvider('providePaths')]
+    public function testHasAPath(string $uri, string $expectedPath): void
+    {
+        $uri = new Uri($uri);
+
+        $path = $uri->getPath();
+
+        self::assertEquals($expectedPath, $path);
+    }
+
+    /** @return array<string, array{string, string}> */
+    public static function providePaths(): array
+    {
+        return [
+            'normal path' => ['https://example.com/path', '/path'],
+            'empty path' => ['https://example.com', ''],
+            'rootless path' => ['/path', '/path'],
+            'relative path' => ['../path', '../path'],
+            'path is normalized' => ['https://example.com/path+', '/path%2B'],
+            'path is not double-encoded' => ['https://example.com/path%2F', '/path%2F'],
+        ];
+    }
+
+    public function testCanChangePath(): void
+    {
+        $uri = new Uri('https://example.com')
+            ->withPath('/path');
+
+        $path = $uri->getPath();
+
+        self::assertEquals('/path', $path);
+    }
+
+    public function testReturnsSameInstanceIfPathDoesNotChange(): void
+    {
+        $uri = new Uri('https://example.com/path');
+
+        $uri2 = $uri->withPath('/path');
+
+        self::assertSame($uri, $uri2);
+    }
 }

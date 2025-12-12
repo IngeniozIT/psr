@@ -50,4 +50,9 @@ class UriNormalizer
     {
         return rawurlencode(rawurldecode($string));
     }
+
+    public static function normalizePath(string $path): string
+    {
+        return implode('/', array_map(self::normalizeUri(...), explode('/', $path)));
+    }
 }
