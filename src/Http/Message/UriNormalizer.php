@@ -48,7 +48,6 @@ class UriNormalizer
         ];
 
         if (
-            self::uriHasMissingParts($uriParts) ||
             self::uriHasAuthorityWithoutHost($matches['authority'], $uriParts) ||
             self::uriHasInvalidIpv6Host($uriParts['host'])
         ) {
@@ -56,12 +55,6 @@ class UriNormalizer
         }
 
         return $uriParts;
-    }
-
-    /** @param array<string, string> $uriParts */
-    private static function uriHasMissingParts(array $uriParts): bool
-    {
-        return $uriParts['scheme'] === '' && $uriParts['host'] === '' && $uriParts['path'] === '';
     }
 
     /** @param array<string, string> $uriParts */

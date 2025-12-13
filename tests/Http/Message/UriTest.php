@@ -34,8 +34,6 @@ class UriTest extends TestCase
     public static function provideInvalidUri(): array
     {
         return [
-            'empty uri' => [''],
-            'no scheme, host, nor path' => ['?foo#bar'],
             'authority without host' => ['https://user:pass@:80'],
             'non-closed ipv6' => ['https://[ipv6/path'],
         ];
