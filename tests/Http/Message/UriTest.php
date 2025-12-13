@@ -355,7 +355,7 @@ class UriTest extends TestCase
             'normal path' => ['https://example.com/path', '/path'],
             'empty path' => ['https://example.com', ''],
             'rootless path' => ['/path', '/path'],
-            'relative path' => ['../path', '../path'],
+            'relative path' => ['/foo/../path', '/foo/../path'],
             'path is normalized' => ['https://example.com/path+', '/path%2B'],
             'path is not double-encoded' => ['https://example.com/path%2F', '/path%2F'],
         ];
@@ -461,5 +461,48 @@ class UriTest extends TestCase
         $uri2 = $uri->withFragment('fragment');
 
         self::assertSame($uri, $uri2);
+    }
+
+    #[DataProvider('provideFullUri')]
+    public function testCanBeConvertedToString(Uri $uri, string $expectedValue): void
+    {
+        $stringUri = (string) $uri;
+
+        self::assertEquals($expectedValue, $stringUri);
+    }
+
+    /** @return array<string, array{Uri, string}> */
+    public static function provideFullUri(): array
+    {
+        return [
+            'scheme suffixed by :' => [
+                new Uri('//example.com')->withScheme('https'),
+                'https://example.com',
+            ],
+            'authority prefixed by //' => [
+                new Uri('/path')->withHost('example.com'),
+                '//example.com/path',
+            ],
+            'add / to path is authority is present' => [
+                new Uri('path')->withHost('example.com'),
+                '//example.com/path',
+            ],
+            'remove multiple path / if no authority is present' => [
+                new Uri('path')->withPath('/////path'),
+                '/path',
+            ],
+            'add ? to query' => [
+                new Uri('//example.com')->withQuery('query'),
+                '//example.com?query'
+            ],
+            'add # to fragment' => [
+                new Uri('//example.com')->withFragment('fragment'),
+                '//example.com#fragment'
+            ],
+            'full URI' => [
+                new Uri('https://user:pass@example.com/path?query=value#fragment'),
+                'https://user:pass@example.com/path?query=value#fragment',
+            ],
+        ];
     }
 }

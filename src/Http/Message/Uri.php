@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace IngeniozIt\Psr\Http\Message;
 
-use BadMethodCallException;
-use IngeniozIt\Psr\Http\Message\Exception\Uri\InvalidUri;
 use Psr\Http\Message\UriInterface;
 
-use function preg_match;
+use function ltrim;
 
 readonly class Uri implements UriInterface
 {
@@ -24,7 +22,7 @@ readonly class Uri implements UriInterface
 
     public function __construct(string $uri)
     {
-        $parsedUri = $this->parseUri($uri);
+        $parsedUri = UriNormalizer::parseUri($uri);
 
         $this->scheme = UriNormalizer::normalizeScheme($parsedUri['scheme']);
         $this->user = UriNormalizer::normalizeUser($parsedUri['user']);
@@ -35,63 +33,6 @@ readonly class Uri implements UriInterface
         $this->path = UriNormalizer::normalizePath($parsedUri['path']);
         $this->query = UriNormalizer::normalizeQuery($parsedUri['query']);
         $this->fragment = UriNormalizer::normalizeFragment($parsedUri['fragment']);
-    }
-
-    /** @return array{scheme: string, host: string, port: string, user: string, pass: string, path: string, query: string, fragment: string} */
-    private function parseUri(string $url): array
-    {
-        $pattern = '~^
-            (?:(?<scheme>[^:/?#]+):)?
-            (?:(?<authority>
-                //
-                (?:(?<user>[^:@/?#]*)(?::(?<pass>[^@/?#]*))?@)?
-                (?<host>\[[^\]/?#]*\]|[^:/?#]*)
-                (?::(?<port>\d*))?
-            ))?
-            (?<path>[^?#]*)
-            (?:\?(?<query>[^#]*))?
-            (?:\#(?<fragment>.*))?
-        $~x';
-
-        preg_match($pattern, $url, $matches);
-
-        $uriParts = [
-            'scheme'   => $matches['scheme'] ?? '',
-            'host'     => $matches['host'] ?? '',
-            'port'     => $matches['port'] ?? '',
-            'user'     => $matches['user'] ?? '',
-            'pass'     => $matches['pass'] ?? '',
-            'path'     => $matches['path'] ?? '',
-            'query'     => $matches['query'] ?? '',
-            'fragment'     => $matches['fragment'] ?? '',
-        ];
-
-        if (
-            $this->uriHasMissingParts($uriParts) ||
-            $this->uriHasAuthorityWithoutHost($matches['authority'], $uriParts) ||
-            $this->uriHasInvalidIpv6Host($uriParts['host'])
-        ) {
-            throw new InvalidUri($url);
-        }
-
-        return $uriParts;
-    }
-
-    /** @param array<string, string> $uriParts */
-    private function uriHasMissingParts(array $uriParts): bool
-    {
-        return $uriParts['scheme'] === '' && $uriParts['host'] === '' && $uriParts['path'] === '';
-    }
-
-    /** @param array<string, string> $uriParts */
-    private function uriHasAuthorityWithoutHost(string $authority, array $uriParts): bool
-    {
-        return $authority !== '' && $uriParts['host'] === '' && $uriParts['scheme'] !== 'file';
-    }
-
-    private function uriHasInvalidIpv6Host(string $host): bool
-    {
-        return str_starts_with($host, '[') && !str_ends_with($host, ']');
     }
 
     public function getScheme(): string
@@ -241,6 +182,17 @@ readonly class Uri implements UriInterface
 
     public function __toString(): string
     {
-        throw new BadMethodCallException('Not implemented');
+        $scheme = $this->getScheme();
+        $authority = $this->getAuthority();
+        $path = $this->getPath();
+        $query = $this->getQuery();
+        $fragment = $this->getFragment();
+
+        return
+            ($scheme !== '' ? $scheme . ':' : '') .
+            ($authority !== '' ? '//' . $authority : '') .
+            ($path !== '' ? '/' . ltrim($path, '/') : '') .
+            ($query !== '' ? '?' . $query : '') .
+            ($fragment !== '' ? '#' . $fragment : '');
     }
 }
